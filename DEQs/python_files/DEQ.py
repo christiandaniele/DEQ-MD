@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-def forward_pass(device,f, y, x, eps, physics, L_0, chsi, lam=1, tol=1e-8,Proj=True,alpha_poisson=1,net=None):
+def forward_pass(device,f, y, x, eps, physics, L_0, chsi, lam=1, tol=2.5e-5,Proj=True,alpha_poisson=1,net=None):
     iterates=[]
     x       = x.to(device)
     L_0     = L_0.to(device)
