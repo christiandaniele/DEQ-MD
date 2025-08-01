@@ -41,6 +41,19 @@ def Bregman_h(x, u, eps):
     term2 = torch.sum(dot_term, dim=(1, 2, 3))
     return term1 - term2
 
+def Bregman_h_double(x, u, eps=1e-4):
+    log_term=-torch.log((x+eps)*(1-x+eps))+torch.log((u+eps)*(1-u+eps))
+    term1=torch.sum(log_term,dim=(1,2,3))
+    dot_term=((1-2*u)/((u+eps)*(1-u+eps)))*(x-u)
+    term2=torch.sum(dot_term,dim=(1,2,3))
+    return term1+term2
+
+def nabla_h_double(x,eps):
+    return (2*x-1)/((x+eps)*(1-x+eps))
+
+def nabla_h_double_star(x,eps):
+    return (x-2+torch.sqrt(x**2+4))/(2*x+eps)
+
 def print_gpu_memory():
     """Print GPU memory."""
     used_memory = torch.cuda.memory_allocated() / 1e9 
@@ -182,7 +195,7 @@ def create_image_tensor(folder_path,size=(256,256),cropping='True',device='cuda'
     else:
 
         for filename in os.listdir(folder_path):
-            if filename.endswith(('.jpg','.png')):
+            if filename.endswith(('.jpg','.png','.bmp')):
                 img_path = os.path.join(folder_path, filename)
                 img = Image.open(img_path)  
                 img_tensor = transform(img)  

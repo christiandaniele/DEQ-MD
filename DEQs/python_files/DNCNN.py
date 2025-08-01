@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch
 import math
 import torch.nn.functional as F
+from deepinv.models import Denoiser
 
 class DnCNN(Denoiser):
     r"""

@@ -19,7 +19,7 @@ def get_path(alpha_poisson=100,kernel='Gauss'):
 def create_operator(device='cuda',kernel='Gauss'):
 
     if kernel=='Gauss':
-        filter=dinv.physics.blur.gaussian_blur(sigma=(1.2, 1.2), angle=45.0)
+        filter=dinv.physics.blur.gaussian_blur(sigma=(1.2, 1.2), angle=0.0)
 
     elif kernel=='Uniform':
         filter=(1/81)*torch.ones((1,1,9,9))
@@ -41,41 +41,85 @@ def create_DEQ_model(device='cuda', alpha_poisson=100, kernel='Gauss', regularis
     physics = create_operator(device, kernel)
 
     if regularisation == 'RED':
-        net = DnCNN(depth=5)
-        conv_net = RED_reg(net)
-        funz = f_theta_2(network=conv_net)
-        model = DEQFixedPoint(device, funz, physics, 0.5, 0.5, conv_net)
-        path = path + 'DnCNN_weights/' + kernel + '/best_model_checkpoint_' + kernel
-        path = path + '_RED_DnCNN_alpha_' + str(alpha_poisson) + '.pth'
-        checkpoint = torch.load(path, weights_only=False)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        model = model.to(device)
-        return model
+        try:
+            net = DnCNN(depth=5)
+            conv_net = RED_reg(net)
+            funz = f_theta_2(network=conv_net)
+            model = DEQFixedPoint(device, funz, physics, 0.5, 0.5, conv_net)
+            path = path + 'DnCNN_weights/' + kernel + '/weights_' + kernel
+            path = path + '_RED_DnCNN_alpha_' + str(alpha_poisson) + '.pth'
+            
+            checkpoint = torch.load(path, weights_only=False, map_location=device)
+            checkpoint['model_state_dict']['physics.filter'] = physics.filter
+            model.load_state_dict(checkpoint['model_state_dict'])
+            model = model.to(device)
+            
+            return model, checkpoint
+        except(RuntimeError, FileNotFoundError, KeyError):
+            net = DnCNN(depth=5)
+            conv_net = RED_reg(net)
+            funz = f_theta_2(network=conv_net)
+            model = DEQFixedPoint(device, funz, physics, 0.5, 0.5, conv_net)
+            path = path + 'DnCNN_weights/' + kernel + '/weights_' + kernel
+            path = path + '_RED_DnCNN_alpha_' + str(alpha_poisson) + '.pth'
+            
+            checkpoint = torch.load(path, weights_only=False, map_location=device)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            model = model.to(device)
+            
+            return model, checkpoint
+            
 
     elif regularisation == 'Scalar':
         try:
             conv_net = ICNN(3)
             funz = f_theta_2(network=conv_net)
             model = DEQFixedPoint(device, funz, physics, 0.5, 0.5, conv_net)
-            path = path + 'ICNN_weights/' + kernel + '/best_model_checkpoint_' + kernel
-            path = path + '_Scalar_alpha_' + str(alpha_poisson) + '.pth'
-            checkpoint = torch.load(path, weights_only=False)
+            path_icnn = path + 'ICNN_weights/' + kernel + '/weights_' + kernel + '_Scalar_alpha_' + str(alpha_poisson) + '.pth'
+            checkpoint = torch.load(path_icnn, weights_only=False, map_location=device)
+            checkpoint['model_state_dict']['physics.filter'] = physics.filter
             model.load_state_dict(checkpoint['model_state_dict'])
             model = model.to(device)
-            return model
-        except RuntimeError:
-            conv_net_ks8 = ICNN(3, ks=8)
-            funz_ks8 = f_theta_2(network=conv_net_ks8)
-            model_ks8 = DEQFixedPoint(device, funz_ks8, physics, 0.5, 0.5, conv_net_ks8)
-            path='/data/chris/GPU_code/GPU_Stuff/Weights/'
-            path_ks8 = path + 'ICNN_weights/' + kernel + '/best_model_checkpoint_' + kernel
-            path_ks8 = path_ks8 + '_Scalar_alpha_' + str(alpha_poisson) + '.pth'
-            checkpoint_ks8 = torch.load(path_ks8, weights_only=False)
-            model_ks8.load_state_dict(checkpoint_ks8['model_state_dict'])
-            model_ks8 = model_ks8.to(device)
-            return model_ks8
+            return model, checkpoint
+        
+        except (RuntimeError, FileNotFoundError, KeyError):
+            try:
+                conv_net_ks8 = ICNN(3, ks=8)
+                funz_ks8 = f_theta_2(network=conv_net_ks8)
+                model_ks8 = DEQFixedPoint(device, funz_ks8, physics, 0.5, 0.5, conv_net_ks8)
+                path_ks8 = path + 'ICNN_weights/' + kernel + '/weights_' + kernel + '_Scalar_alpha_' + str(alpha_poisson) + '.pth'
+                checkpoint_ks8 = torch.load(path_ks8, weights_only=False, map_location=device)
+                checkpoint_ks8['model_state_dict']['physics.filter'] = physics.filter
+                model_ks8.load_state_dict(checkpoint_ks8['model_state_dict'])
+                model_ks8 = model_ks8.to(device)
+                return model_ks8, checkpoint_ks8
+            
+            except (RuntimeError, FileNotFoundError, KeyError):
+                try:
+                    conv_net_ks8 = ICNN(3, ks=8)
+                    funz_ks8 = f_theta_2(network=conv_net_ks8)
+                    model_ks8 = DEQFixedPoint(device, funz_ks8, physics, 0.5, 0.5, conv_net_ks8)
+                    path_ks8 = path + 'ICNN_weights/' + kernel + '/weights_' + kernel + '_Scalar_alpha_' + str(alpha_poisson) + '.pth'
+                    checkpoint_ks8 = torch.load(path_ks8, weights_only=False, map_location=device)
+                    model_ks8.load_state_dict(checkpoint_ks8['model_state_dict'])
+                    model_ks8 = model_ks8.to(device)
+                    return model_ks8, checkpoint_ks8
+                
+                except (RuntimeError, FileNotFoundError, KeyError):
+                    try:
+                        conv_net = ICNN(3)
+                        funz = f_theta_2(network=conv_net)
+                        model = DEQFixedPoint(device, funz, physics, 0.5, 0.5, conv_net)
+                        path_icnn = path + 'ICNN_weights/' + kernel + '/weights_' + kernel + '_Scalar_alpha_' + str(alpha_poisson) + '.pth'
+                        checkpoint = torch.load(path_icnn, weights_only=False, map_location=device)
+                        model.load_state_dict(checkpoint['model_state_dict'])
+                        model = model.to(device)
+                        return model, checkpoint
+                    
+                    except (RuntimeError, FileNotFoundError, KeyError):
+                        return None, None
     else:
-        return None 
+        return None, None
 
 
 def test_on_images(images_path, device='cuda', alphas=[100, 60, 40], kernels=['Gauss', 'Motion_7', 'Uniform'],regs=['RED']):

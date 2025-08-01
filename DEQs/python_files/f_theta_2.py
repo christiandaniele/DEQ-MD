@@ -9,7 +9,7 @@ class f_theta_2():
         x.requires_grad_()  
         L = L_0
         stepsize = 1 / (2 * L)
-
+ 
         phi = lam * self.network(x)
         grad_phi = torch.autograd.grad(
             outputs=phi,
@@ -25,29 +25,33 @@ class f_theta_2():
                 T_L = x / (1 + stepsize[:, None, None, None] * x * (grad_kl + grad_phi))
                 if Proj:
                     T_L[T_L>1]=1
-                d = (0.8 / stepsize) * Bregman_h(T_L, x, 0)
-                kl_diff = (KL(y, physics(T_L), eps,alpha=alpha_poisson) - KL(y, physics(x), eps,alpha=alpha_poisson))
-                phi_diff = (lam * self.network(T_L) - phi).flatten()
-                stop_condition = (-kl_diff - phi_diff) > d
-                stop_condition_equal = (-kl_diff - phi_diff) >= 0
-
-            if (stop_condition + stop_condition_equal).all():
+                d = (0.8/stepsize)*Bregman_h(T_L, x, eps)
+                Psi_TL = (KL(y, physics(T_L), eps,alpha=alpha_poisson) + lam * self.network(T_L).flatten())
+                Psi = phi.flatten()+KL(y, physics(x), eps,alpha=alpha_poisson)
+                
+                stop_condition_bt = Psi-Psi_TL > d
+                stop_condition_treshold = stepsize <= 1e-6
+                stop_condition = stop_condition_bt | stop_condition_treshold
+    
+            if (stop_condition).all():
                 break
             
             with torch.no_grad():
                 stepsize = torch.where(
-                    torch.min(stop_condition + stop_condition_equal, torch.ones(stop_condition.shape[0], dtype=torch.bool, device=x.device)),
+                    torch.min(stop_condition , torch.ones(stop_condition.shape[0], dtype=torch.bool, device=x.device)),
                     stepsize,
                     stepsize * chsi
                 )
 
                 L = torch.where(
-                    torch.min(stop_condition + stop_condition_equal, torch.ones(stop_condition.shape[0], dtype=torch.bool, device=x.device)),
+                    torch.min(stop_condition , torch.ones(stop_condition.shape[0], dtype=torch.bool, device=x.device)),
                     L,
                     L / chsi
                 )
+                #print(L)
 
         # Libera memoria per tensori intermedi
-        del phi, grad_phi, grad_kl, kl_diff, phi_diff
+        del phi, grad_phi, grad_kl, Psi
         torch.cuda.empty_cache()
-        return T_L, L
+        return T_L, L,Psi_TL
+    
