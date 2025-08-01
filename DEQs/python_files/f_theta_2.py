@@ -50,7 +50,6 @@ class f_theta_2():
                 )
                 #print(L)
 
-        # Libera memoria per tensori intermedi
         del phi, grad_phi, grad_kl, Psi
         torch.cuda.empty_cache()
         return T_L, L,Psi_TL
