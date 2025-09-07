@@ -17,5 +17,6 @@ and --noise_levl can be 'high', 'medium' or 'low.
 
 To test the model 
 ```bash
-python inference.py --kernel Gauss --noise_level medium --regularisation RED --save_images
+python inference.py --kernel Gauss --noise_level medium --regularisation RED 
 ```
+you can add --save_images
