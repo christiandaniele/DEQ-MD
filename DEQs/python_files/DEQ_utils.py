@@ -16,7 +16,7 @@ def get_path(alpha_poisson=100,kernel='Gauss'):
 
     return path
 
-def create_operator(device='cuda',kernel='Gauss'):
+def create_operator(device='cuda',kernel='Gauss',shape=256):
 
     if kernel=='Gauss':
         filter=dinv.physics.blur.gaussian_blur(sigma=(1.2, 1.2), angle=0.0)
@@ -32,23 +32,28 @@ def create_operator(device='cuda',kernel='Gauss'):
         print('Error: Kernel not implemented')
         return None,None
 
-    physics=dinv.physics.BlurFFT(((1,3,256,256)),filter,device=device)
+    physics=dinv.physics.BlurFFT(((1,1,shape,shape)),filter,device=device)
     return physics
 
-def create_DEQ_model(device='cuda', alpha_poisson=100, kernel='Gauss', regularisation='RED'):
+def create_DEQ_model(device='cuda', alpha_poisson=100, kernel='Gauss', regularisation='RED',noise_level='low'):
     
-    path = 'Weights/'
     physics = create_operator(device, kernel)
+    
+    if alpha_poisson==40:
+        noise_intensity='high'
+    elif alpha_poisson==60:
+        noise_intensity='medium'
+    else:
+        noise_intensity='low'
 
     if regularisation == 'RED':
+        path='Weights/DnCNN_weights/'+ kernel +'/'+ noise_level + '.pth'
         try:
             net = DnCNN(depth=5)
             conv_net = RED_reg(net)
             funz = f_theta_2(network=conv_net)
             model = DEQFixedPoint(device, funz, physics, 0.5, 0.5, conv_net)
-            path = path + 'DnCNN_weights/' + kernel + '/weights_' + kernel
-            path = path + '_RED_DnCNN_alpha_' + str(alpha_poisson) + '.pth'
-            
+
             checkpoint = torch.load(path, weights_only=False, map_location=device)
             checkpoint['model_state_dict']['physics.filter'] = physics.filter
             model.load_state_dict(checkpoint['model_state_dict'])
@@ -60,8 +65,6 @@ def create_DEQ_model(device='cuda', alpha_poisson=100, kernel='Gauss', regularis
             conv_net = RED_reg(net)
             funz = f_theta_2(network=conv_net)
             model = DEQFixedPoint(device, funz, physics, 0.5, 0.5, conv_net)
-            path = path + 'DnCNN_weights/' + kernel + '/weights_' + kernel
-            path = path + '_RED_DnCNN_alpha_' + str(alpha_poisson) + '.pth'
             
             checkpoint = torch.load(path, weights_only=False, map_location=device)
             model.load_state_dict(checkpoint['model_state_dict'])
@@ -71,12 +74,12 @@ def create_DEQ_model(device='cuda', alpha_poisson=100, kernel='Gauss', regularis
             
 
     elif regularisation == 'Scalar':
+        path='Weights/ICNN_weights/'+ kernel + '/best_model_checkpoint_' + kernel + '_Scalar_alpha_' + str(alpha_poisson) + '.pth'
         try:
             conv_net = ICNN(3)
             funz = f_theta_2(network=conv_net)
             model = DEQFixedPoint(device, funz, physics, 0.5, 0.5, conv_net)
-            path_icnn = path + 'ICNN_weights/' + kernel + '/weights_' + kernel + '_Scalar_alpha_' + str(alpha_poisson) + '.pth'
-            checkpoint = torch.load(path_icnn, weights_only=False, map_location=device)
+            checkpoint = torch.load(path, weights_only=False, map_location=device)
             checkpoint['model_state_dict']['physics.filter'] = physics.filter
             model.load_state_dict(checkpoint['model_state_dict'])
             model = model.to(device)
@@ -87,8 +90,7 @@ def create_DEQ_model(device='cuda', alpha_poisson=100, kernel='Gauss', regularis
                 conv_net_ks8 = ICNN(3, ks=8)
                 funz_ks8 = f_theta_2(network=conv_net_ks8)
                 model_ks8 = DEQFixedPoint(device, funz_ks8, physics, 0.5, 0.5, conv_net_ks8)
-                path_ks8 = path + 'ICNN_weights/' + kernel + '/weights_' + kernel + '_Scalar_alpha_' + str(alpha_poisson) + '.pth'
-                checkpoint_ks8 = torch.load(path_ks8, weights_only=False, map_location=device)
+                checkpoint_ks8 = torch.load(path, weights_only=False, map_location=device)
                 checkpoint_ks8['model_state_dict']['physics.filter'] = physics.filter
                 model_ks8.load_state_dict(checkpoint_ks8['model_state_dict'])
                 model_ks8 = model_ks8.to(device)
@@ -99,8 +101,7 @@ def create_DEQ_model(device='cuda', alpha_poisson=100, kernel='Gauss', regularis
                     conv_net_ks8 = ICNN(3, ks=8)
                     funz_ks8 = f_theta_2(network=conv_net_ks8)
                     model_ks8 = DEQFixedPoint(device, funz_ks8, physics, 0.5, 0.5, conv_net_ks8)
-                    path_ks8 = path + 'ICNN_weights/' + kernel + '/weights_' + kernel + '_Scalar_alpha_' + str(alpha_poisson) + '.pth'
-                    checkpoint_ks8 = torch.load(path_ks8, weights_only=False, map_location=device)
+                    checkpoint_ks8 = torch.load(path, weights_only=False, map_location=device)
                     model_ks8.load_state_dict(checkpoint_ks8['model_state_dict'])
                     model_ks8 = model_ks8.to(device)
                     return model_ks8, checkpoint_ks8
@@ -110,8 +111,7 @@ def create_DEQ_model(device='cuda', alpha_poisson=100, kernel='Gauss', regularis
                         conv_net = ICNN(3)
                         funz = f_theta_2(network=conv_net)
                         model = DEQFixedPoint(device, funz, physics, 0.5, 0.5, conv_net)
-                        path_icnn = path + 'ICNN_weights/' + kernel + '/weights_' + kernel + '_Scalar_alpha_' + str(alpha_poisson) + '.pth'
-                        checkpoint = torch.load(path_icnn, weights_only=False, map_location=device)
+                        checkpoint = torch.load(path, weights_only=False, map_location=device)
                         model.load_state_dict(checkpoint['model_state_dict'])
                         model = model.to(device)
                         return model, checkpoint
