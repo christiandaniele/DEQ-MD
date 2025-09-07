@@ -19,4 +19,4 @@ To test the model
 ```bash
 python inference.py --kernel Gauss --noise_level medium --regularisation RED 
 ```
-you can add --save_images
+You can use the optional flags --plot_metrics, --save_images, and --save_results to plot performance metrics per iteration, save the ground truth and reconstructed images, and store the average results in a text file, respectively
