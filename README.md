@@ -13,6 +13,7 @@ python train.py --kernel_type Gauss --noise_level medium --model DEQ-RED
 ```
 
 --kernel_type can be 'Gauss', 'Motion_7', 'Uniform' or you can add your own
+and --noise_levl can be 'high', 'medium' or 'low.
 
 To test the model 
 ```bash
