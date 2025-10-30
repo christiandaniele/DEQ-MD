@@ -119,7 +119,7 @@ for epoch in range(num_epochs):
         # Forward pass
         noisy_images_batch=add_poisson_noise(noisy_images_batch,alpha_poisson)
 
-        f0,_,_,_,_=model(noisy_images_batch,training=True,Proj=True)
+        f0,_=model(noisy_images_batch,training=True,Proj=True)
         loss = torch.linalg.norm((f0 - clean_images_batch).flatten(start_dim=1), 2, dim=1)**2#+tv_eps*tv.forward(f0)
         loss = loss.mean()
 
@@ -141,7 +141,7 @@ for epoch in range(num_epochs):
         noisy_images_batch,clean_images_batch= batch
         noisy_images_batch=add_poisson_noise(noisy_images_batch,alpha_poisson)
 
-        output,_ ,_,_,_= model(noisy_images_batch,training=False,Proj=True)
+        output,_ = model(noisy_images_batch,training=False,Proj=True)
 
         PSNR_val=psnr(output,clean_images_batch)
 
