@@ -4,7 +4,11 @@ https://arxiv.org/abs/2507.11461
 
 Before starting
 ```bash
+conda create -n DEQ-MD python=3.11
+conda activate DEQ-MD
+conda install pip
 pip install -r requirements.txt
+
 ```
 
 To train the model
