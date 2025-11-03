@@ -8,15 +8,21 @@ from torchvision.transforms.functional import to_pil_image
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
+from DNCNN import DnCNN
+from ICNN import ICNN
+from f_theta_2 import f_theta_2
+import deepinv as dinv
+from DEQ import DEQFixedPoint
+from Utils import RED_reg,create_image_tensor,add_poisson_noise
+from deepinv.loss.metric import PSNR,SSIM,LPIPS
+from torch.utils.data import TensorDataset, DataLoader
+from DEQ_utils import create_DEQ_model
 
-# Importa le tue librerie personalizzate
-from Utils import create_image_tensor,add_poisson_noise
-from DEQ_utils import create_DEQ_model 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Inference script for DEQ models.")
     
-    # Parametri obbligatori
     parser.add_argument('--kernel', type=str, required=True, choices=['Gauss', 'Uniform', 'Motion_7'],
                         help='Type of degradation kernel.')
     parser.add_argument('--noise_level', type=str, required=True, choices=['low', 'medium', 'high'],
@@ -24,7 +30,6 @@ def parse_args():
     parser.add_argument('--regularisation', type=str, required=True, choices=['RED', 'Scalar'],
                         help='Type of regularisation used in the model.')
     
-    # Parametri opzionali
     parser.add_argument('--input_path', type=str, default='set3c/',
                         help='Path to the images for inference.')
     parser.add_argument('--batch_size', type=int, default=10,
@@ -44,7 +49,7 @@ def save_images(output_path, gt_image, y_image, init_image, rec_image, filename)
     h, w = gt_image.shape[-2:]
     combined_image = Image.new('RGB', (w * 4, h))
 
-    # Aggiungiamo un clamp per assicurarci che i valori siano tra 0 e 1
+    #clamping in [0,1]
     combined_image.paste(to_pil_image(torch.clamp(gt_image, 0, 1)), (0, 0))
     combined_image.paste(to_pil_image(torch.clamp(y_image, 0, 1)), (w, 0))
     combined_image.paste(to_pil_image(torch.clamp(init_image, 0, 1)), (w * 2, 0))
@@ -98,21 +103,28 @@ def main():
     output_path = output_base_path / output_dir_name
 
     print("Loading the model...")
-    model, _ = create_DEQ_model(device=device, regularisation=args.regularisation, kernel=args.kernel,noise_level=args.noise_level)
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    #create DEQ-MD model
+    model=create_DEQ_model(device=device,
+                           kernel=args.kernel,
+                           regularisation=args.regularisation,
+                           noise_level=args.noise_level)
+    
     if model is None:
         print("Error: Could not load the model. Please check the parameters and file paths.")
         return
     
     print("Loading images...")
-    gt_images = create_image_tensor(Path(args.input_path), device=device, RGB=True)
+    gt_images = create_image_tensor(Path(args.input_path), device=device)
     
-    from torch.utils.data import TensorDataset, DataLoader
     dataset = TensorDataset(gt_images)
     loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False)
     
     model.eval()
     
-    # Inizializzazione delle metriche
+    #metrics
     psnr = PSNR()
     ssim = SSIM()
     lpips = LPIPS(device=device)
