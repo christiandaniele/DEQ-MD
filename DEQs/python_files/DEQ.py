@@ -11,21 +11,16 @@ def forward_pass(device, f, y, x, eps, physics, L_0, chsi, lam=1, tol=2.5e-5, Pr
     f0, L0, _ = f.forward(y, x, eps, physics, L_0, chsi, Proj=Proj, alpha_poisson=alpha_poisson)
     active_mask = torch.ones(f0.shape[0], dtype=torch.bool, device=device)
     
-    # NEW: Struttura per salvare le metriche per ogni immagine del batch
     metrics_by_image = [{'psnr_vett': [], 'residuals': [], 'stepsize_vett': [], 'fun_values': []} for _ in range(y.shape[0])]
     
-    # Inizializzazione della prima iterazione
     if log_metrics and GT is not None:
         for i in range(y.shape[0]):
             metrics_by_image[i]['psnr_vett'].append(psnr(physics.A_adjoint(y[i].unsqueeze(0)), GT[i].unsqueeze(0)).detach().cpu().numpy())
 
     iter = 1
     while active_mask.any():
-    #for i in range(2):
         L = L0
         iter += 1
-        #if iter % 100 == 0:
-        #    print(f"Iteration {iter}, Active images: {active_mask.sum().item()}")
         
         f0_old = f0.clone()
         f0_active = f0[active_mask]
@@ -37,16 +32,13 @@ def forward_pass(device, f, y, x, eps, physics, L_0, chsi, lam=1, tol=2.5e-5, Pr
         L0[active_mask] = L0_new_active
 
         with torch.no_grad():
-            # Questo è il residual per il criterio di stop
+            
             residual = torch.norm(f0_new_active - f0_old_active, p=2, dim=(1, 2, 3)) / (torch.norm(f0_new_active, p=2, dim=(1, 2, 3)) + 1e-6)
-            #print('residual:', residual)
-            #if iter % 50 == 0:
-            #    print(residual)
             
             if log_metrics:
                 active_indices = torch.where(active_mask)[0]
                 for i, idx in enumerate(active_indices):
-                    # Questo è il residual salvato per l'analisi
+
                     metrics_by_image[idx]['residuals'].append(residual[i].detach().cpu().numpy())
                     metrics_by_image[idx]['stepsize_vett'].append((1/L0_new_active[i]).detach().cpu().numpy())
                     metrics_by_image[idx]['fun_values'].append(fun_val[i].detach().cpu().numpy())
@@ -59,7 +51,6 @@ def forward_pass(device, f, y, x, eps, physics, L_0, chsi, lam=1, tol=2.5e-5, Pr
         del f0_active, L_active, f0_old_active, f0_new_active, L0_new_active, residual
         torch.cuda.empty_cache()
     
-    # NEW: Restituiamo solo la struttura delle metriche, senza liste piatte
     return f0, L0, metrics_by_image
 
 class DEQFixedPoint(nn.Module):
@@ -80,15 +71,12 @@ class DEQFixedPoint(nn.Module):
         else:
              x_0 = self.physics.A_adjoint(y)
         
-        # NEW: Chiamata alla forward_pass che restituisce i valori
         z, L0, metrics_by_image = forward_pass(self.device, self.f, y, x_0, 1e-8, self.physics, L_0, self.chsi, lam, Proj=Proj, alpha_poisson=alpha_poisson, GT=GT, log_metrics=log_metrics, **self.kwargs)
         
         L0 = L0.to(self.device)
         z, _, _ = self.f.forward(y, z, 1e-8, self.physics, L0, self.chsi, lam, create_grapho=False, Proj=Proj, alpha_poisson=alpha_poisson)
         z0 = z.clone().detach().requires_grad_()
-        #print('here')
         f0, _, _ = self.f.forward(y, z0, 1e-8, self.physics, L0, self.chsi, lam, create_grapho=training, Proj=Proj, alpha_poisson=alpha_poisson)
         
-        # Il metodo forward restituisce il risultato e la struttura delle metriche
         return f0, metrics_by_image
 
