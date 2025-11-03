@@ -2,13 +2,16 @@
 Repository for the paper: Deep Equilibrium models for Poisson inverse problems via Mirror Descent  
 https://arxiv.org/abs/2507.11461
 
-Cite:
+### Cite
+
+```bibtex
 @article{daniele2025deep,
   title={Deep Equilibrium models for Poisson imaging inverse problems via Mirror Descent},
   author={Daniele, Christian and Villa, Silvia and Vaiter, Samuel and Calatroni, Luca},
   journal={arXiv preprint arXiv:2507.11461},
   year={2025}
 }
+```
 
 ## Overview
 
