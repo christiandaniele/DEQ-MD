@@ -69,7 +69,7 @@ if args.model=='DEQ-RED':
     model = DEQFixedPoint(device,funz,physics,0.5,0.5,conv_net)
     model.to(device)
 elif args.model=='DEQ-S':
-    conv_net = ICNN(ks=8)
+    conv_net = ICNN(3)
     funz = f_theta_2(network=conv_net)
     model = DEQFixedPoint(device,funz,physics,0.5,0.5,conv_net)
     model.to(device)
