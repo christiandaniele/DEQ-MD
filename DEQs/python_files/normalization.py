@@ -2,7 +2,7 @@
 import deepinv as dinv
 import torch
 
-def create_normalized_operator(filter,device,scale_factor=1)
+def create_normalized_operator(filter,device,scale_factor=1):
 
   aux=dinv.physics.Downsampling(factor=scale_factor,device=device,img_size=(3,256,256),filter=filter)
   
