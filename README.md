@@ -85,7 +85,7 @@ Optional flags:
 - `requirements.txt` – Python dependencies
 - `train.py` – training
 - `inference.py` – inference
-- `DEQ_utils.py` – physical operators (blur operator) and helpers
+- `DEQ_utils.py` – physical operators builder and DEQ-MD builder
 
 ## License & Contact
 Use the code respecting the licenses of external dependencies and provided weights. For questions or issues, open an issue in the repository or contact the project author.
