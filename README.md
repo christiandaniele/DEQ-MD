@@ -34,8 +34,7 @@ This repository contains the implementation of DEQ-MD, used for image deblurring
 See `requirements.txt` in the repository root. Main dependencies:
 - Python 3.9+ or 3.10+
 - PyTorch
-- numpy, Pillow, torchvision
-- deepinv (for PSNR metric; if unavailable, you can replace with your own implementation)
+- deepinv 
 
 ## Quick Installation
 
