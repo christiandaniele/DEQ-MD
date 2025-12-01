@@ -5,6 +5,7 @@ from f_theta_2 import f_theta_2
 import deepinv as dinv
 from DEQ import DEQFixedPoint
 from utils.download_weights import download_weight
+from Utils import RED_reg,torch_kernels
 
 
 def get_path(alpha_poisson=100,kernel='Gauss'):
