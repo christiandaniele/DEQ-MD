@@ -36,6 +36,16 @@ See `requirements.txt` in the repository root. Main dependencies:
 - PyTorch
 - deepinv 
 
+##downalod the repo
+```
+cd ~/Desktop  #or choose another folder 
+
+# Clona the repo
+git clone https://github.com/christiandaniele/DEQ-MD.git
+
+cd DEQ-MD
+```
+
 ## Quick Installation
 
 ```bash
