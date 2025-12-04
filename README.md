@@ -36,7 +36,7 @@ See `requirements.txt` in the repository root. Main dependencies:
 - PyTorch
 - deepinv 
 
-##downalod the repo
+## Download the repo
 ```
 cd ~/Desktop  #or choose another folder 
 
