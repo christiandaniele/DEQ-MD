@@ -61,16 +61,22 @@ def create_DEQ_model(device='cuda',kernel='Gauss', regularisation='RED',noise_le
             
 
     elif regularisation == 'Scalar':
-        
+
         conv_net = ICNN(3)
         funz = f_theta_2(network=conv_net)
         model = DEQFixedPoint(device, funz, physics, 0.5, 0.5, conv_net)
-        
-        model.load_state_dict(checkpoint['model_state_dict'],strict=False)
+
+        try:
+            model.load_state_dict(checkpoint['model_state_dict'], strict=False)
+        except Exception as e:
+            conv_net = ICNN(3,ks=8)
+            funz = f_theta_2(network=conv_net)
+            model = DEQFixedPoint(device, funz, physics, 0.5, 0.5, conv_net)
+
+            model.load_state_dict(checkpoint['model_state_dict'], strict=False)
+
         model = model.to(device)
-        
         return model
-        
-        
+
     else:
         return None, None
